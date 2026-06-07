@@ -1,0 +1,98 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: medinsure_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: medinsure
+      POSTGRES_PASSWORD: medinsure_password
+      POSTGRES_DB: medinsure_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medinsure -d medinsure_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - medinsure_net
+
+  # ── Backend ────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: medinsure_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://medinsure:medinsure_password@db:5432/medinsure_db
+      SECRET_KEY: change-this-in-production-generate-with-secrets
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      REFRESH_TOKEN_EXPIRE_DAYS: 7
+      DEBUG: "false"
+      ALLOWED_ORIGINS: '["http://localhost:3000","http://localhost:80","http://frontend"]'
+    volumes:
+      - ml_models:/app/app/ml/models
+      - pdf_reports:/tmp/reports
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    networks:
+      - medinsure_net
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8000/api/v1
+    container_name: medinsure_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - medinsure_net
+
+  # ── pgAdmin (optional, dev only) ───────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: medinsure_pgadmin
+    restart: unless-stopped
+    profiles: ["dev"]
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@medinsure.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - medinsure_net
+
+volumes:
+  postgres_data:
+  ml_models:
+  pdf_reports:
+
+networks:
+  medinsure_net:
+    driver: bridge
