@@ -22,14 +22,8 @@ COPY . .
 RUN mkdir -p app/ml/models /tmp/reports
 
 # Pre-train models at build time
-RUN python -c "
-import asyncio, sys
-sys.path.insert(0, '.')
-from app.ml.pipeline import MLPipeline
-pipeline = MLPipeline()
-pipeline.train()
-print('Models pre-trained successfully')
-"
+# Pre-train models at build time
+RUN python -c "import sys; sys.path.insert(0,'.'); from app.ml.pipeline import MLPipeline; pipeline = MLPipeline(); pipeline.train(); print('Models pre-trained successfully')"
 
 EXPOSE 8000
 
