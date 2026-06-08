@@ -3,12 +3,10 @@
 @tailwind utilities;
 
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
     @apply bg-slate-50 text-slate-900 font-sans antialiased;
   }
+
   h1, h2, h3 {
     @apply font-display;
   }
