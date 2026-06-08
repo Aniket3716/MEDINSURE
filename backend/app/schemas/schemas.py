@@ -95,6 +95,26 @@ class UserUpdate(BaseModel):
 
 # ─── Prediction Schemas ────────────────────────────────────────────────────────
 
+class IncomeBracketEnum(str, Enum):
+    """Predefined salary brackets for users who prefer not to enter exact figures."""
+    under_30k      = "under_30k"
+    from_30k_60k   = "30k_60k"
+    from_60k_100k  = "60k_100k"
+    from_100k_200k = "100k_200k"
+    over_200k      = "over_200k"
+
+# Mapping bracket → midpoint salary used in ML
+BRACKET_MIDPOINTS: Dict[str, float] = {
+    "under_30k":    20_000,
+    "30k_60k":      45_000,
+    "60k_100k":     80_000,
+    "100k_200k":   150_000,
+    "over_200k":   250_000,
+}
+
+
+# ─── Prediction Schemas ────────────────────────────────────────────────────────
+
 class PredictionInput(BaseModel):
     age: int = Field(..., ge=18, le=100, description="Age in years")
     sex: SexEnum
@@ -102,6 +122,12 @@ class PredictionInput(BaseModel):
     children: int = Field(..., ge=0, le=10, description="Number of dependents")
     smoker: SmokingEnum
     region: RegionEnum
+    annual_salary: float = Field(
+        ...,
+        ge=0,
+        le=2_000_000,
+        description="Annual gross salary in USD — used to improve prediction accuracy and match insurance plans to your budget",
+    )
 
     class Config:
         json_schema_extra = {
@@ -112,6 +138,7 @@ class PredictionInput(BaseModel):
                 "children": 2,
                 "smoker": "no",
                 "region": "northeast",
+                "annual_salary": 75000,
             }
         }
 
@@ -151,6 +178,8 @@ class PredictionResponse(BaseModel):
     best_prediction: float
     risk_score: float
     risk_category: RiskCategory
+    income_tier: Optional[int] = None
+    income_label: Optional[str] = None
     shap_explanations: List[SHAPExplanation]
     recommended_plans: List[InsurancePlan]
     processing_time_ms: float
@@ -165,6 +194,7 @@ class PredictionListItem(BaseModel):
     age: int
     bmi: float
     smoker: SmokingEnum
+    annual_salary: Optional[float] = None
     best_prediction: float
     risk_category: RiskCategory
     best_model: str

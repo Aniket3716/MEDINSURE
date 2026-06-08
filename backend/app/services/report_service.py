@@ -268,11 +268,15 @@ def _build_profile_section(styles, input_data):
         "Overweight" if bmi < 30 else "Obese"
     )
 
+    salary = input_data.get("annual_salary", 0) or 0
+    salary_str = f"${salary:,.0f}/yr"
+
     rows = [
         ["Field", "Value", "Field", "Value"],
         ["Age", f"{input_data.get('age')} years", "Sex", input_data.get("sex", "").title()],
         ["BMI", f"{input_data.get('bmi', 0):.1f} ({bmi_cat})", "Smoker", input_data.get("smoker", "").title()],
         ["Children", str(input_data.get("children", 0)), "Region", input_data.get("region", "").title()],
+        ["Annual Salary", salary_str, "Income Bracket", input_data.get("income_label", "—").replace("-", " ").title()],
     ]
 
     col_w = (letter[0] - 1.5 * inch) / 4

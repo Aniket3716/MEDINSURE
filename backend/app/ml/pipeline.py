@@ -408,6 +408,10 @@ class MLPipeline:
                 if metadata.get("trained_at")
                 else None
             )
+            # Verify models were actually loaded
+        if not self.models:
+         raise ValueError("No ML models found on disk")
+        
 
     # ─── Inference ───────────────────────────────────────────────────────────
 
@@ -417,6 +421,8 @@ class MLPipeline:
 
         if not self.models:
             self.load_or_train()
+            print("Loaded models:", self.models.keys())
+            print("Metrics:", self.metrics.keys())
 
         # Build input DataFrame
         df = pd.DataFrame([{
@@ -434,15 +440,24 @@ class MLPipeline:
         # Predictions from all models
         predictions = {}
         for name, model in self.models.items():
-            pred = float(model.predict(X)[0])
-            predictions[name] = max(0, round(pred, 2))
+         try:
+           pred = float(model.predict(X)[0])
+           predictions[name] = max(0, round(pred, 2))
+           print(f"{name} prediction:", pred)
+         except Exception as e:
+          print(f"{name} failed:", e)
 
         # Best model by lowest RMSE
         best_model = min(
             self.metrics.keys(),
             key=lambda m: self.metrics[m].get("rmse", float("inf"))
         ) if self.metrics else "xgboost"
-
+         
+        print("Loaded models:", self.models.keys())
+        print("Predictions:", predictions)
+        print("Metrics:", self.metrics.keys())
+        
+        print("Final predictions:", predictions) 
         best_prediction = predictions.get(best_model, list(predictions.values())[0])
 
         # Risk scoring

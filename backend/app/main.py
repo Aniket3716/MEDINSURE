@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+import app.models
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from contextlib import asynccontextmanager

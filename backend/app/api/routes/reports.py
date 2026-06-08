@@ -47,6 +47,8 @@ async def download_report(
         "children": pred.children,
         "smoker": pred.smoker.value if hasattr(pred.smoker, "value") else pred.smoker,
         "region": pred.region.value if hasattr(pred.region, "value") else pred.region,
+        "annual_salary": pred.annual_salary or 0,
+        "income_label": pred.income_label or "—",
     }
 
     user_data = {

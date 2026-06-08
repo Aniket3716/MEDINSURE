@@ -44,6 +44,7 @@ class Prediction(Base):
     children = Column(Integer, nullable=False)
     smoker = Column(Enum(SmokingEnum), nullable=False)
     region = Column(Enum(RegionEnum), nullable=False)
+    annual_salary = Column(Float, nullable=True)   # NEW — income for accuracy + plan fit
 
     # Prediction results (all 3 models)
     predicted_premium_xgboost = Column(Float, nullable=True)
@@ -55,6 +56,10 @@ class Prediction(Base):
     # Risk categorization
     risk_score = Column(Float, nullable=True)
     risk_category = Column(String(50), nullable=True)  # low, medium, high, very_high
+
+    # Income classification (derived from annual_salary)
+    income_tier = Column(Integer, nullable=True)   # 0-4
+    income_label = Column(String(30), nullable=True)  # e.g. "middle"
 
     # SHAP values (stored as JSON)
     shap_values = Column(JSON, nullable=True)
